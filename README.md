@@ -53,6 +53,12 @@ Simplified polymorphic full text + similarity search based on postgres
     end
     ```
 
+    If you have existing records that need to create/update a polysearch record, you can save them like this.
+
+    ```ruby
+    User.find_each(&:update_polysearch)
+    ```
+
 1. Start searching
 
     ```ruby
