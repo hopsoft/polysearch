@@ -1,6 +1,6 @@
 # Polysearch
 
-#### Simplified polymorphic full text + similarity search based on postgres
+Simplified polymorphic full text + similarity search based on postgres
 
 ## Requirements
 
@@ -53,7 +53,7 @@
 
 1. Start searching
 
-    ```
+    ```ruby
     User.create first_name: "Nate", last_name: "Hopkins", email: "nhopkins@mailinator.com"
 
     User.polysearch("nate")
