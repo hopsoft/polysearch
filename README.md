@@ -4,7 +4,7 @@
 
 Simplified polymorphic full text + similarity search based on postgres
 
-> NOTE: This project is narrower and scope and more opinionated than [pg_search](https://github.com/Casecommons/pg_search).
+> NOTE: This project is narrower in scope and more opinionated than [pg_search](https://github.com/Casecommons/pg_search).
 
 ## Requirements
 
