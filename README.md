@@ -1,3 +1,5 @@
+[![Lines of Code](http://img.shields.io/badge/lines_of_code-218-brightgreen.svg?style=flat)](http://blog.codinghorror.com/the-best-code-is-no-code-at-all/)
+
 # Polysearch
 
 Simplified polymorphic full text + similarity search based on postgres
