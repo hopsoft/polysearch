@@ -47,10 +47,11 @@ Simplified polymorphic full text + similarity search based on postgres
       after_save_commit :update_polysearch
 
       def to_tsvectors
-        []
-          .then { |list| list << make_tsvector(first_name, weight: "A") }
-          .then { |list| list << make_tsvector(last_name, weight: "A") }
-          .then { |list| list << make_tsvector(email, weight: "B") }
+        [
+          make_tsvector(first_name, weight: "A"),
+          make_tsvector(last_name, weight: "A"),
+          make_tsvector(email, weight: "B")
+        ]
       end
     end
     ```
