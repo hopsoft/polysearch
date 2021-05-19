@@ -47,7 +47,7 @@ module Polysearch
             .select_fts_rank(value, :searchable_id, rank_alias: fts_rank_alias)
             .select_similarity_rank(value, :searchable_id, rank_alias: similarity_rank_alias)
             .where(searchable_type: name)
-            .fts(value).or(Polysearch::Record.similar(value))
+            .fts(value).or(Polysearch::Record.where(searchable_type: name).similar(value))
 
           query = <<~SQL
             SELECT searchables.*, fts.#{fts_rank_alias}, fts.#{similarity_rank_alias} from (#{fts.to_sql}) fts
