@@ -65,6 +65,17 @@ module Polysearch
       end
     }
 
+    scope :combined_search, ->(value) {
+      subquery = <<~SQL
+        (
+          #{select_full_text_search_rank(value).full_text_search(value).except(:order).to_sql}
+          UNION ALL
+          #{select_similarity_rank(value).similarity_search(value).except(:order).to_sql}
+        ) AS #{table_name}
+      SQL
+      from(subquery).order("search_rank desc")
+    }
+
     scope :polysearch, ->(value) {
       if value.blank?
         all

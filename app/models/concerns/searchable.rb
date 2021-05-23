@@ -37,21 +37,25 @@ module Polysearch
       after_destroy :destroy_polysearch
 
       scope :full_text_search, ->(value) {
-        value.blank? ?
-          all :
-          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.select_full_text_search_rank(value).full_text_search(value)))
+        value.blank? ? all : joins(:polysearch).merge(Polysearch::Record.full_text_search(value).select_full_text_search_rank(value))
       }
 
       scope :similarity_search, ->(value) {
-        value.blank? ?
-          all :
-          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.select_similarity_rank(value).similarity_search(value)))
+        value.blank? ? all : joins(:polysearch).merge(Polysearch::Record.similarity_search(value).select_similarity_rank(value))
+      }
+
+      scope :combined_search, ->(value) {
+        subquery = <<~SQL
+          (
+            SELECT #{table_name}.*, searchable_polysearches.search_rank from (#{Polysearch::Record.combined_search(value).except(:order).to_sql}) searchable_polysearches
+            LEFT JOIN LATERAL (select * from #{table_name} WHERE id = searchable_polysearches.searchable_id) #{table_name} ON TRUE
+          ) #{table_name}
+        SQL
+        from(subquery).order("search_rank desc")
       }
 
       scope :polysearch, ->(value) {
-        value.blank? ?
-          all :
-          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.polysearch(value)))
+        value.blank? ? all : joins(:polysearch).merge(Polysearch::Record.polysearch(value))
       }
     end
 

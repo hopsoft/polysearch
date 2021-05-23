@@ -1,8 +1,8 @@
-[![Lines of Code](http://img.shields.io/badge/lines_of_code-226-brightgreen.svg?style=flat)](http://blog.codinghorror.com/the-best-code-is-no-code-at-all/)
+[![Lines of Code](http://img.shields.io/badge/lines_of_code-237-brightgreen.svg?style=flat)](http://blog.codinghorror.com/the-best-code-is-no-code-at-all/)
 
 # Polysearch
 
-Simplified polymorphic full text + similarity search based on postgres
+Simplified polymorphic full text + similarity search based on postgres.
 
 > NOTE: This project is narrower in scope and more opinionated than [pg_search](https://github.com/Casecommons/pg_search).
 
@@ -50,7 +50,7 @@ Simplified polymorphic full text + similarity search based on postgres
         [
           make_tsvector(first_name, weight: "A"),
           make_tsvector(last_name, weight: "A"),
-          make_tsvector(email, weight: "B")
+          make_tsvector(nickname, weight: "B")
         ]
       end
     end
@@ -65,12 +65,25 @@ Simplified polymorphic full text + similarity search based on postgres
 1. Start searching
 
     ```ruby
-    User.create first_name: "Nate", last_name: "Hopkins", email: "nhopkins@mailinator.com"
+    User.create first_name: "Shawn", last_name: "Spencer", nickname: "Maverick"
 
-    User.polysearch("nate")
-    User.polysearch("ntae") # misspellings also return results
-    User.polysearch("nate").where(created_at: 1.day.ago..Current.time) # active record chaining
-    User.polysearch("nate").order(created_at: :desc) # chain additional ordering after the polysearch scope
+    # find natural language matches (faster)
+    User.full_text_search("shawn")
+
+    # find similarity matches, best for misspelled search terms (slower)
+    User.similarity_search("shwn")
+
+    # perform a combined full text search and a similarity search
+    User.combined_search("shwn")
+
+    # perform a full text search and fall back to similarity (faster than combined_search)
+    User.polysearch("shwn")
+
+    # calculate counts (explicitly pass :id to omit search rankings)
+    User.full_text_search("shawn").count(:id)
+    User.similarity_search("shwn").count(:id)
+    User.combined_search("shwn").count(:id)
+    User.polysearch("shwn").count(:id)
     ```
 
 ## License
