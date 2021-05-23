@@ -33,39 +33,46 @@ module Polysearch
 
     # scopes ....................................................................
 
-    scope :select_fts_rank, ->(value, *selects, rank_alias: nil) {
-      value = value.to_s.gsub(/\W/, " ").squeeze(" ").downcase.strip
-      value = Arel::Nodes::SqlLiteral.new(sanitize_sql_array(["?", value.to_s]))
-      plainto_tsquery = Arel::Nodes::NamedFunction.new("plainto_tsquery", [Arel::Nodes::SqlLiteral.new("'simple'"), value])
+    scope :select_full_text_search_rank, ->(value, *selects) {
+      plainto_tsquery = Arel::Nodes::NamedFunction.new("plainto_tsquery", [Arel::Nodes::SqlLiteral.new("'simple'"), arel_search_value(value)])
       ts_rank = Arel::Nodes::NamedFunction.new("ts_rank", [arel_table[:value], plainto_tsquery])
-
-      rank_alias ||= "fts_rank"
       selects << Arel.star if selects.blank?
-      selects << ts_rank.as(rank_alias)
-      select(*selects).order("#{rank_alias} desc")
+      selects << ts_rank.as("search_rank")
+      select(*selects).reorder("search_rank desc")
     }
 
-    scope :fts, ->(value) {
-      value = value.to_s.gsub(/\W/, " ").squeeze(" ").downcase.strip
-      value = Arel::Nodes::SqlLiteral.new(sanitize_sql_array(["?", value.to_s]))
-      plainto_tsquery = Arel::Nodes::NamedFunction.new("plainto_tsquery", [Arel::Nodes::SqlLiteral.new("'simple'"), value])
-      where(Arel::Nodes::InfixOperation.new("@@", arel_table[:value], plainto_tsquery))
+    scope :full_text_search, ->(value) {
+      if value.blank?
+        all
+      else
+        plainto_tsquery = Arel::Nodes::NamedFunction.new("plainto_tsquery", [Arel::Nodes::SqlLiteral.new("'simple'"), arel_search_value(value)])
+        where(Arel::Nodes::InfixOperation.new("@@", arel_table[:value], plainto_tsquery))
+      end
     }
 
-    scope :select_similarity_rank, ->(value, *selects, rank_alias: nil) {
-      value = value.to_s.gsub(/\W/, " ").squeeze(" ").downcase.strip
-      value = Arel::Nodes::SqlLiteral.new(sanitize_sql_array(["?", value.to_s]))
-
-      rank_alias ||= "similarity_rank"
+    scope :select_similarity_rank, ->(value, *selects) {
+      similarity = Arel::Nodes::NamedFunction.new("similarity", [arel_table[:words], arel_search_value(value)])
       selects << Arel.star if selects.blank?
-      selects << Arel::Nodes::NamedFunction.new("similarity", [arel_table[:words], value]).as(rank_alias)
-      select(*selects).order("#{rank_alias} desc")
+      selects << similarity.as("search_rank")
+      select(*selects).order("search_rank desc")
     }
 
-    scope :similar, ->(value, range: 0.01) {
-      value = value.to_s.gsub(/\W/, " ").squeeze(" ").downcase.strip
-      value = Arel::Nodes::SqlLiteral.new(sanitize_sql_array(["?", value.to_s]))
-      where Arel::Nodes::NamedFunction.new("similarity", [arel_table[:words], value]).gteq(range)
+    scope :similarity_search, ->(value) {
+      if value.blank?
+        all
+      else
+        where Arel::Nodes::NamedFunction.new("similarity", [arel_table[:words], arel_search_value(value)]).gt(0)
+      end
+    }
+
+    scope :polysearch, ->(value) {
+      if value.blank?
+        all
+      else
+        full_text_search(value).exists? ?
+          select_full_text_search_rank(value).full_text_search(value) :
+          select_similarity_rank(value).similarity_search(value)
+      end
     }
 
     # additional config (i.e. accepts_nested_attribute_for etc...) ..............
@@ -74,6 +81,10 @@ module Polysearch
 
     # class methods .............................................................
     class << self
+      def arel_search_value(value)
+        value = value.to_s.gsub(/\W/, " ").squeeze(" ").downcase.strip
+        Arel::Nodes::SqlLiteral.new(sanitize_sql_array(["?", value]))
+      end
     end
 
     # public instance methods ...................................................

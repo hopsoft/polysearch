@@ -36,27 +36,22 @@ module Polysearch
       has_one :polysearch, as: :searchable, class_name: "Polysearch::Record", inverse_of: "searchable"
       after_destroy :destroy_polysearch
 
+      scope :full_text_search, ->(value) {
+        value.blank? ?
+          all :
+          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.select_full_text_search_rank(value).full_text_search(value)))
+      }
+
+      scope :similarity_search, ->(value) {
+        value.blank? ?
+          all :
+          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.select_similarity_rank(value).similarity_search(value)))
+      }
+
       scope :polysearch, ->(value) {
-        if value.blank?
-          all
-        else
-          fts_rank_alias = "#{table_name.singularize}_fts_rank"
-          similarity_rank_alias = "#{table_name.singularize}_similarity_rank"
-
-          fts = Polysearch::Record
-            .select_fts_rank(value, :searchable_id, rank_alias: fts_rank_alias)
-            .select_similarity_rank(value, :searchable_id, rank_alias: similarity_rank_alias)
-            .where(searchable_type: name)
-            .fts(value).or(Polysearch::Record.where(searchable_type: name).similar(value))
-
-          query = <<~SQL
-            SELECT searchables.*, fts.#{fts_rank_alias}, fts.#{similarity_rank_alias} from (#{fts.to_sql}) fts
-            LEFT JOIN LATERAL (select * from #{table_name} WHERE id = fts.searchable_id) searchables ON TRUE
-          SQL
-
-          select(Arel.star).from(Arel::Nodes::SqlLiteral.new("(#{query})").as(table_name))
-            .reorder(fts_rank_alias => :desc, similarity_rank_alias => :desc)
-        end
+        value.blank? ?
+          all :
+          select(Arel.star).from(joins(:polysearch).merge(Polysearch::Record.polysearch(value)))
       }
     end
 

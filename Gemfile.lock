@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    polysearch (0.1.1)
+    polysearch (0.2.0)
       rails (>= 6.0)
 
 GEM
@@ -84,12 +84,8 @@ GEM
     marcel (1.0.1)
     method_source (1.0.0)
     mini_mime (1.0.3)
-    mini_portile2 (2.5.1)
     minitest (5.14.4)
     nio4r (2.5.7)
-    nokogiri (1.11.5)
-      mini_portile2 (~> 2.5.0)
-      racc (~> 1.4)
     nokogiri (1.11.5-arm64-darwin)
       racc (~> 1.4)
     parallel (1.20.1)
