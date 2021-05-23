@@ -73,10 +73,10 @@ Simplified polymorphic full text + similarity search based on postgres.
     # find similarity matches, best for misspelled search terms (slower)
     User.similarity_search("shwn")
 
-    # perform a combined full text search and a similarity search
+    # perform both a full text search and similarity search
     User.combined_search("shwn")
 
-    # perform a full text search and fall back to similarity (faster than combined_search)
+    # perform a full text search and fall back to similarity search (faster than combined_search)
     User.polysearch("shwn")
 
     # calculate counts (explicitly pass :id to omit search rankings)
