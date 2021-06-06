@@ -60,6 +60,7 @@ module Polysearch
     end
 
     def update_polysearch
+      return unless persisted?
       tsvectors = to_tsvectors.compact.uniq
       return if tsvectors.blank?
 
@@ -67,10 +68,13 @@ module Polysearch
       tsvectors.concat similarity_words_tsvectors
       tsvector = tsvectors.join(" || ")
 
-      attributes = {searchable: self}
-      attributes[:created_at] = Time.current unless Polysearch::Record.where(attributes).exists?
-      attributes[:updated_at] = Time.current
-      attributes[:words] = similarity_words.join(" ")
+      attributes = {
+        searchable_type: self.class.name,
+        searchable_id: id,
+        words: similarity_words.join(" "),
+        created_at: Time.current,
+        updated_at: Time.current
+      }
 
       result = Polysearch::Record.upsert(
         attributes,
