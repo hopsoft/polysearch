@@ -62,12 +62,24 @@ module Polysearch
     def update_polysearch
       tsvectors = to_tsvectors.compact.uniq
       return if tsvectors.blank?
+
       tsvectors.pop while tsvectors.size > 500
       tsvectors.concat similarity_words_tsvectors
       tsvector = tsvectors.join(" || ")
-      fts = Polysearch::Record.where(searchable: self).first_or_create
-      fts.update_value tsvector
-      fts.update_columns words: similarity_words.join(" ")
+
+      attributes = {searchable: self}
+      attributes[:created_at] = Time.current unless Polysearch::Record.where(attributes).exists?
+      attributes[:updated_at] = Time.current
+      attributes[:words] = similarity_words.join(" ")
+
+      result = Polysearch::Record.upsert(
+        attributes,
+        unique_by: [:searchable_type, :searchable_id],
+        returning: :id
+      )
+
+      record = Polysearch::Record.find_by(id: result.first["id"])
+      record.update_value tsvector
     end
 
     # Polysearch::Searchable#to_tsvectors is abstract... a noop by default
