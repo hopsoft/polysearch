@@ -110,7 +110,7 @@ module Polysearch
         Arel::Nodes::SqlLiteral.new(sanitize_sql_value("SELECT #{tsvector}"))
       ])
       length = Arel::Nodes::NamedFunction.new("length", [Arel::Nodes::SqlLiteral.new(quote_column_name(:word))])
-      query = self.class.select(:word).from(ts_stat.to_sql).where(length.gteq(3)).to_sql
+      query = self.class.unscoped.select(:word).from(ts_stat.to_sql).where(length.gteq(3)).to_sql
       result = self.class.connection.execute(query)
       result.values.flatten
     end
